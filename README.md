@@ -8,7 +8,7 @@ cd adaptive-soundscape-api
 
 ### 2. Install Dependencies
 Install UV first if you don't have it yet
-Windows:
+<br>Windows:
 ```bash
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
