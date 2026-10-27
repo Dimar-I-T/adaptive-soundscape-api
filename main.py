@@ -12,6 +12,15 @@ raw_client_url = os.getenv("CLIENT_URL", "http://localhost:3000")
 
 origins = [url.strip() for url in raw_client_url.split(",") if url.strip()]
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await connect_db()
+    print("Database connected")
+    yield
+    await close_db()
+
+app = FastAPI(lifespan=lifespan)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -19,15 +28,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await connect_db()
-    print("Database connected")
-    yield
-    await close_db
-
-app = FastAPI(lifespan=lifespan)
 
 app.include_router(auth_routes.router, prefix="/api")
 
