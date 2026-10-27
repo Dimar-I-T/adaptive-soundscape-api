@@ -1,7 +1,24 @@
+import os
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from config.db import connect_db, close_db
 from routes import auth_routes
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()
+
+raw_client_url = os.getenv("CLIENT_URL", "http://localhost:3000")
+
+origins = [url.strip() for url in raw_client_url.split(",") if url.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
