@@ -1,10 +1,15 @@
+import asyncio
 import os
-from fastapi import FastAPI
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Request
 from contextlib import asynccontextmanager
 from config.db import connect_db, close_db
-from routes import auth_routes
+from routes import auth_routes, sound_routes
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
+from contextlib import asynccontextmanager
+from config.s3 import s3_client, BUCKET_NAME
+from services.sample_cache import SampleStore, SAMPLE_FILES
+from services.sound_service import register_samples
 
 load_dotenv()
 
@@ -14,10 +19,17 @@ origins = [url.strip() for url in raw_client_url.split(",") if url.strip()]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    store = SampleStore(s3_client, BUCKET_NAME)
+    report = await asyncio.to_thread(store.load_all)    
+    register_samples(store)
+    app.state.samples = store
+    print("Samples:", report)
     await connect_db()
     print("Database connected")
-    yield
-    await close_db()
+    try:
+        yield
+    finally:
+        await close_db()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -30,6 +42,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_routes.router, prefix="/api")
+app.include_router(sound_routes.router, prefix="/api")
 
 @app.get("/")
 def root():
