@@ -4,12 +4,15 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from contextlib import asynccontextmanager
 from config.db import connect_db, close_db
-from routes import auth_routes, sound_routes
+from routes import auth_routes, sound_routes, user_routes
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from config.s3 import s3_client, BUCKET_NAME
 from services.sample_cache import SampleStore, SAMPLE_FILES
 from services.sound_service import register_samples
+from utils.exceptions import AppError
+from fastapi.responses import JSONResponse
+
 
 load_dotenv()
 
@@ -43,6 +46,17 @@ app.add_middleware(
 
 app.include_router(auth_routes.router, prefix="/api")
 app.include_router(sound_routes.router, prefix="/api")
+app.include_router(user_routes.router, prefix="/api")
+
+@app.exception_handler(AppError)
+async def app_error_handler(req: Request, exc: AppError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "message": exc.message
+        }
+    )
 
 @app.get("/")
 def root():
