@@ -5,6 +5,7 @@ import os
 import tempfile
 import uuid
 from pathlib import Path
+from config.db import fetch, fetchrow
 
 import librosa
 import numpy as np
@@ -524,3 +525,48 @@ async def create_masking(file: UploadFile, sound: str = "default", texture_mix: 
     except Exception:
         log.exception("Masking generation failed")
         raise AppError("Gagal membuat suara masking.", status_code=500)
+
+# sound database
+
+# API post untuk menyimpan sound mask
+# Butuh input user_id, title, sound_type, analysis(json), r2_audio_url
+async def save_sound(id: str, title: str, sound_type: str, analysis: str, r2_url: str):
+    query = """
+        insert into sound_profiles (user_id, title, sound_type, analysis, r2_audio_url)
+        values
+        ($1, $2, $3, $4, $5)
+        returning *
+    """
+
+    return await fetchrow(query, id, title, sound_type, analysis, r2_url)
+
+# API get untuk mendapatkan sound milik user terautentikasi
+# Butuh input user_id, search (opsional), sound_type (opsional) 
+async def get_sounds(id: str, search: str, sound_type: str):
+    list_parameters = []
+    curr_val = 1
+
+    query = f"""
+        select id, title, sound_type, analysis, r2_audio_url
+        from sound_profiles
+        where user_id = ${curr_val}
+    """
+
+    list_parameters.append(id)
+
+    # jika ada search
+    if search is not None:
+        search = '%' + search + '%'
+        curr_val += 1
+        query += f" and title like ${curr_val}"
+        list_parameters.append(search)
+
+    # jika sound_type
+    if sound_type is not None:
+        curr_val += 1
+        query += f" and sound_type = ${curr_val}"
+        list_parameters.append(sound_type)
+
+    query += " order by created_at desc"
+
+    return await fetch(query, *list_parameters)
