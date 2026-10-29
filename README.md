@@ -36,3 +36,8 @@ uv sync
 ```bash
 fastapi dev main.py  
 ```
+
+### IF YOU INSTALLED SOME DEPENDECIES
+```bash
+pip freeze > requirements.txt
+```
