@@ -32,12 +32,13 @@ async def authenticate(req: Request) -> UserPublic:
     except JWTError:
         raise cred_exc
 
-    username = await get_user(id)
+    user = await get_user(id)
 
-    if username is None:
+    if user is None:
         raise cred_exc
 
-    username = username[0].get('username')
+    username = user[0].get('username')
+    sound_preference_default = user[0].get('sound_preference_default')
 
-    return UserPublic(sub=id, username=username)
+    return UserPublic(sub=id, username=username, sound_preference_default=sound_preference_default)
         

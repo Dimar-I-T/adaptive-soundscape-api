@@ -14,3 +14,7 @@ class UserLogin(BaseModel):
 class UserPublic(BaseModel):
     sub: str
     username: str
+    sound_preference_default: str
+
+class SoundPreference(BaseModel):
+    sound_preference_default: str
