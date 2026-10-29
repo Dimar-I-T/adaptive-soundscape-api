@@ -570,3 +570,13 @@ async def get_sounds(id: str, search: str, sound_type: str):
     query += " order by created_at desc"
 
     return await fetch(query, *list_parameters)
+
+# API delete sound
+# hanya perlu user_id dan id soundnya dari parameter
+async def delete_sound(user_id: str, sound_id: str):
+    query = """
+        delete from sound_profiles
+        where user_id = $1 and id = $2
+    """
+
+    return await fetchrow(query, user_id, sound_id)
