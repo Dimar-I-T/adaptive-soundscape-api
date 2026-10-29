@@ -81,4 +81,24 @@ async def get_my_sounds(search: str = None, sound_type: str = None, current_user
             })
         )
 
+async def delete_my_sound(id: str, current_user: UserPublic = Depends(authenticate)):
+    try:
+        user_id = current_user.sub
+        response = await sound_service.delete_sound(user_id, id)
+
+        return JSONResponse(
+            status_code=200,
+            content=jsonable_encoder({
+                "success": True,
+                "message": f"Successfully deleted sound {id}"
+            })
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content=jsonable_encoder({
+                "success": False,
+                "message": str(e)
+            })
+        )
 
