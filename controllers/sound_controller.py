@@ -33,9 +33,9 @@ async def store_sound(sound: SoundStore, current_user: UserPublic = Depends(auth
         title = sound.title
         sound_type = sound.sound_type
         analysis = sound.analysis
-        r2_audio_url = sound.r2_audio_url
+        r2_key = sound.r2_key
 
-        response = await sound_service.save_sound(id, title, sound_type, analysis, r2_audio_url)
+        response = await sound_service.save_sound(id, title, sound_type, analysis, r2_key)
 
         return JSONResponse(
             status_code=200,

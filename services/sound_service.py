@@ -4,6 +4,7 @@ import logging
 import os
 import tempfile
 import uuid
+from dotenv import load_dotenv
 from pathlib import Path
 from config.db import fetch, fetchrow
 
@@ -28,12 +29,12 @@ from services.sample_cache import SAMPLE_FILES, SR, SampleStore
 from utils.exceptions import AppError
 
 log = logging.getLogger(__name__)
-
+load_dotenv()
 MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 MIN_INPUT_S = 2.0
 ALLOWED_EXT = {".wav", ".mp3", ".m4a", ".aac", ".ogg", ".flac", ".webm"}
 OUTPUT_PREFIX = "masking_outputs/"
-URL_TTL_S = 3600
+URL_TTL_S = 24 * 3600
 
 _MAX_DURATION = 30
 _FRAME_DURATION = 0.1
@@ -530,7 +531,10 @@ async def create_masking(file: UploadFile, sound: str = "default", texture_mix: 
 
 # API post untuk menyimpan sound mask
 # Butuh input user_id, title, sound_type, analysis(json), r2_audio_url
-async def save_sound(id: str, title: str, sound_type: str, analysis: str, r2_url: str):
+async def save_sound(id: str, title: str, sound_type: str, analysis: str, r2_key: str):
+    httpPrefix = os.getenv("AWS_PREFIX")
+    r2_audio_url = httpPrefix + r2_key
+    print(r2_key)
     query = """
         insert into sound_profiles (user_id, title, sound_type, analysis, r2_audio_url)
         values
@@ -538,7 +542,7 @@ async def save_sound(id: str, title: str, sound_type: str, analysis: str, r2_url
         returning *
     """
 
-    return await fetchrow(query, id, title, sound_type, analysis, r2_url)
+    return await fetchrow(query, id, title, sound_type, analysis, r2_audio_url)
 
 # API get untuk mendapatkan sound milik user terautentikasi
 # Butuh input user_id, search (opsional), sound_type (opsional) 
