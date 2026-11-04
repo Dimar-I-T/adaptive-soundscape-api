@@ -6,11 +6,15 @@ from pwdlib import PasswordHash
 
 hasher = PasswordHash.recommended()
 
+def hash_password(plain_password):
+    password_hashed = hasher.hash(plain_password)
+    return password_hashed
+
 async def register(db: DB_Pool, user_data: UserCreate):
     username = user_data.username
     email = user_data.email
     password_plain = user_data.password
-    password_hash = hasher.hash(password_plain)
+    password_hash = hash_password(password_plain)
     query = """
         insert into users (username, email, password_hash)
         values ($1, $2, $3)
