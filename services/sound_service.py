@@ -481,7 +481,7 @@ def _parse_sound(sound):
             raise AppError(f"Bobot suara tidak valid: '{part}'.", status_code=422)
 
     for name, w in weights.items():
-        if name != "default" and name not in GENERATORS:
+        if name != "default" and name not in GENERATORS and name not in SAMPLE_FILES:
             avail = ["default", *GENERATORS]
             raise AppError(f"Suara '{name}' tidak tersedia. Pilihan: {avail}", status_code=422)
         if w < 0 or not np.isfinite(w):
@@ -490,6 +490,25 @@ def _parse_sound(sound):
         raise AppError("Total bobot suara harus lebih dari 0.", status_code=422)
     return weights
 
+def _describe_sources(weights):
+    sources = {}
+
+    for name in weights:
+        if name == "default":
+            sources[name] = {
+                "type": "white_noise"
+            }
+        elif name in SAMPLE_FILES:
+            sources[name] = {
+                "type": "sample",
+                "file": SAMPLE_FILES[name]["file"]
+            }
+        else:
+            sources[name] = {
+                "type": "synthetic"
+            }
+
+    return sources
 
 def _run_pipeline(data, filename, weights, texture_mix, whiten):
     y = _load_upload(data, filename)
@@ -498,6 +517,7 @@ def _run_pipeline(data, filename, weights, texture_mix, whiten):
     audio = _render(gain_lin, weights, texture_mix, whiten)
     return {
         "sound": weights,
+        "sources": _describe_sources(weights),
         "texture_mix": texture_mix,
         "whiten": whiten,
         "audio": _upload_output(audio),
@@ -508,6 +528,18 @@ def _run_pipeline(data, filename, weights, texture_mix, whiten):
 
 async def create_masking(file: UploadFile, sound: str = "default", texture_mix: float = 0.8, whiten: float = 1.0):
     weights = _parse_sound(sound)
+    missing_samples = [
+        name
+        for name in weights
+        if name in SAMPLE_FILES and name not in GENERATORS
+    ]
+
+    if missing_samples:
+        raise AppError(
+            f"Sample tidak tersedia: {missing_samples}",
+            status_code=503
+        )
+    
     if not 0.0 <= texture_mix <= 1.0:
         raise AppError("texture_mix harus antara 0 dan 1.", status_code=422)
     if not 0.0 <= whiten <= 1.0:
