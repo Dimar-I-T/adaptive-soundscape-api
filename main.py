@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from contextlib import asynccontextmanager
-from config.db import connect_db, close_db
+from config.db import DB_Pool
 from routes import auth_routes, sound_routes, user_routes
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -12,7 +12,6 @@ from services.sample_cache import SampleStore, SAMPLE_FILES
 from services.sound_service import register_samples
 from utils.exceptions import AppError
 from fastapi.responses import JSONResponse
-
 
 load_dotenv()
 
@@ -23,16 +22,17 @@ origins = [url.strip() for url in raw_client_url.split(",") if url.strip()]
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     store = SampleStore(s3_client, BUCKET_NAME)
-    report = await asyncio.to_thread(store.load_all)    
+    report = await asyncio.to_thread(store.load_all)
     register_samples(store)
     app.state.samples = store
-    print("Samples:", report)
-    await connect_db()
+    pool = DB_Pool()
+    await pool.connect_db()
+    app.state.db = pool
     print("Database connected")
     try:
         yield
     finally:
-        await close_db()
+        await pool.close_db()
 
 app = FastAPI(lifespan=lifespan)
 

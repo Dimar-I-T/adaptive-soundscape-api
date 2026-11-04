@@ -6,7 +6,7 @@ import tempfile
 import uuid
 from dotenv import load_dotenv
 from pathlib import Path
-from config.db import fetch, fetchrow
+from config.db import DB_Pool
 
 import librosa
 import numpy as np
@@ -531,7 +531,7 @@ async def create_masking(file: UploadFile, sound: str = "default", texture_mix: 
 
 # API post untuk menyimpan sound mask
 # Butuh input user_id, title, sound_type, analysis(json), r2_audio_url
-async def save_sound(id: str, title: str, sound_type: str, analysis: str, r2_key: str):
+async def save_sound(db: DB_Pool, id: str, title: str, sound_type: str, analysis: str, r2_key: str):
     httpPrefix = os.getenv("AWS_PREFIX")
     r2_audio_url = httpPrefix + r2_key
     print(r2_key)
@@ -542,13 +542,15 @@ async def save_sound(id: str, title: str, sound_type: str, analysis: str, r2_key
         returning *
     """
 
-    return await fetchrow(query, id, title, sound_type, analysis, r2_audio_url)
+    return await db.fetchrow(query, id, title, sound_type, analysis, r2_audio_url)
 
 # API get untuk mendapatkan sound milik user terautentikasi
 # Butuh input user_id, search (opsional), sound_type (opsional) 
-async def get_sounds(id: str, search: str, sound_type: str):
+async def get_sounds(db: DB_Pool, id: str, search: str, sound_type: str):
     list_parameters = []
     curr_val = 1
+
+    print("sound_type = ", sound_type)
 
     query = f"""
         select id, title, sound_type, analysis, r2_audio_url
@@ -573,14 +575,14 @@ async def get_sounds(id: str, search: str, sound_type: str):
 
     query += " order by created_at desc"
 
-    return await fetch(query, *list_parameters)
+    return await db.fetch(query, *list_parameters)
 
 # API delete sound
 # hanya perlu user_id dan id soundnya dari parameter
-async def delete_sound(user_id: str, sound_id: str):
+async def delete_sound(db: DB_Pool, user_id: str, sound_id: str):
     query = """
         delete from sound_profiles
         where user_id = $1 and id = $2
     """
 
-    return await fetchrow(query, user_id, sound_id)
+    return await db.fetchrow(query, user_id, sound_id)

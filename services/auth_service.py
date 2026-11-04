@@ -1,4 +1,4 @@
-from config.db import fetch, fetchrow
+from config.db import DB_Pool
 from schemas.user_schema import UserCreate, UserLogin
 from utils.exceptions import UserNotFoundError, UserNotAuthorizedError
 import jwt
@@ -6,7 +6,7 @@ from pwdlib import PasswordHash
 
 hasher = PasswordHash.recommended()
 
-async def register(user_data: UserCreate):
+async def register(db: DB_Pool, user_data: UserCreate):
     username = user_data.username
     email = user_data.email
     password_plain = user_data.password
@@ -17,13 +17,13 @@ async def register(user_data: UserCreate):
         returning *
     """
 
-    return await fetchrow(query, username, email, password_hash)
+    return await db.fetchrow(query, username, email, password_hash)
 
 # Helper Functions for login service
-def _verify_password(plain_password, password_hash):
+def verify_password(plain_password, password_hash):
     return hasher.verify(plain_password, password_hash) 
 
-async def login(user_data: UserLogin):
+async def login(db: DB_Pool, user_data: UserLogin):
     username = user_data.username
     password_plain = user_data.password
     # step 1 is to make sure the user exists
@@ -33,14 +33,14 @@ async def login(user_data: UserLogin):
         where username = $1
     """
 
-    user = await fetchrow(query_find_user, username)
+    user = await db.fetchrow(query_find_user, username)
     if user is None:
         raise UserNotFoundError("Incorrect username", status_code = 404)
 
     # step 2 is to compare plain password and hashed
     password_hash = user['password_hash']
     
-    if not _verify_password(password_plain, password_hash):
+    if not verify_password(password_plain, password_hash):
         raise UserNotAuthorizedError("Invalid credentials.", status_code = 401)
 
     return {'id': user['id']}

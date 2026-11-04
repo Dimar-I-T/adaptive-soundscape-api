@@ -21,7 +21,6 @@ SAMPLE_FILES = {
     "sea_waves_real":    {"file": "sea_waves.mp3",    "flatten": 0.5, "highpass": 50},
 }
 
-
 def _pick_stable_window(x, win_s, step_s=0.5):
     if len(x) <= win_s * SR:
         return x, 0.0

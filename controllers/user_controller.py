@@ -5,8 +5,9 @@ from middleware.authMiddleware import authenticate
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from utils.exceptions import AppError
+from config.db import DB_Pool
 
-async def read_me(current_user: UserPublic = Depends(authenticate)):
+async def read_me(current_user: UserPublic):
     try:
         return JSONResponse(
             status_code=200,
@@ -33,12 +34,12 @@ async def read_me(current_user: UserPublic = Depends(authenticate)):
             })
         )
 
-async def update_sound_preference_default(sound_preference: SoundPreference, current_user: UserPublic = Depends(authenticate)):
+async def update_sound_preference_default(db: DB_Pool, sound_preference: SoundPreference, current_user: UserPublic):
     try:
         id = current_user.sub
         sound_preference_default = sound_preference.sound_preference_default
 
-        response = await update_sound_preference_default_serv(id, sound_preference_default)
+        response = await update_sound_preference_default_serv(db, id, sound_preference_default)
 
         return JSONResponse(
             status_code=200,

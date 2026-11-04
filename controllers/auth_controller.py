@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
+from config.db import DB_Pool
 from datetime import datetime, timedelta, timezone
 import jwt
 from fastapi.responses import JSONResponse
@@ -25,9 +26,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def register(user_data: UserCreate):
+async def register(db: DB_Pool, user_data: UserCreate):
     try:
-        user = await auth_service.register(user_data)
+        user = await auth_service.register(db, user_data)
         return JSONResponse(
             status_code=200,
             content=jsonable_encoder({
@@ -45,9 +46,9 @@ async def register(user_data: UserCreate):
             })
         )
 
-async def login(user_data: UserLogin):
+async def login(db: DB_Pool, user_data: UserLogin):
     try:
-        user = await auth_service.login(user_data)
+        user = await auth_service.login(db, user_data)
 
         access_token_expires = timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
 
