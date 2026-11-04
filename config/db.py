@@ -7,20 +7,13 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 class DB_Pool:
-    instance = None
-
-    def __new__(cls):
-        if cls.instance is None:
-            cls.instance = super().__new__(cls)
-        return cls.instance
-
     def __init__(self):
-        if not hasattr(self, "pool"):
-            self.pool = None
+        self.pool = None
 
-    async def connect_db(self):
+    async def connect_db(self, database_url: str | None = None):
         if self.pool is None:
-            self.pool = await asyncpg.create_pool(DATABASE_URL)
+            database_url = database_url or os.getenv("DATABASE_URL")
+            self.pool = await asyncpg.create_pool(database_url)
 
     async def close_db(self):
         if self.pool is not None:

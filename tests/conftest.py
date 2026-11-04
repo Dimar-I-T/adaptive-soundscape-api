@@ -1,12 +1,48 @@
+import os
 import io
 from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
+import pytest_asyncio
 import soundfile as sf
 
 from services import sound_service
 from services.sample_cache import SR
+
+from httpx import ASGITransport, AsyncClient
+from main import create_app
+
+@pytest_asyncio.fixture
+async def app():
+    testing_db_url = os.getenv("DATABASE_URL_TESTING")
+
+    if not testing_db_url:
+        raise RuntimeError("DATABASE_URL_TESTING is missing")
+
+    application = create_app(
+        database_url=testing_db_url,
+        load_samples=False
+    )
+
+    async with application.router.lifespan_context(application):
+        yield application
+
+
+@pytest_asyncio.fixture
+async def db(app):
+    return app.state.db
+
+
+@pytest_asyncio.fixture
+async def client(app):
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test"
+    ) as test_client:
+        yield test_client
 
 @pytest.fixture
 def s3(monkeypatch):
