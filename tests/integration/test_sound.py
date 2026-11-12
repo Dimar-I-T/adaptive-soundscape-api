@@ -99,7 +99,6 @@ async def test_get_my_sound(client, db):
     result_me = response_me.json()
     user_id = result_me['data']['sub']
 
-    # test tanpa search dan sound_type
     response: JSONResponse = await client.get(
         get_my_sound_endpoint_url
     )
