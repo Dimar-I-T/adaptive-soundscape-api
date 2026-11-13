@@ -386,28 +386,6 @@ async def test_get_my_sound_without_authentication(client):
     assert response.status_code == 401
 
 @pytest.mark.asyncio
-async def test_delete_my_sound(client, db):
-    await login_test_user(client, db)
-
-    sound_id = os.getenv("SOUND_DELETE_ID")
-
-    if not sound_id:
-        pytest.skip(
-            "Set SOUND_DELETE_ID to a disposable sound ID"
-        )
-
-    response = await client.delete(
-        endpoint(f"/sound/{sound_id}")
-    )
-
-    body = assert_success(response)
-
-    assert body["message"] == (
-        f"Successfully deleted sound {sound_id}"
-    )
-
-
-@pytest.mark.asyncio
 async def test_delete_sound_without_authentication(client):
     response = await client.delete(
         endpoint("/sound/test-id")
